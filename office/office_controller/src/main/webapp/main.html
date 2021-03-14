@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>功能主页面</title>
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script type="text/javascript">
+    </script>
+</head>
+<body>
+<div style="margin:20px 0;"></div>
+<div align="center">
+<div class="easyui-layout" style="width:1050px;height:950px;">
+    <div data-options="region:'north'" style="height:50px"></div>
+    <div data-options="region:'south',split:true" style="height:50px;"></div>
+    <div data-options="region:'east',split:true" title="当前用户" style="width:120px;">
+        欢迎您:<br>&nbsp;&nbsp;&nbsp;<span id="userName" ></span>&nbsp;|&nbsp;<a href="/employee/logout"><strong>退出</strong></a>
+    </div>
+    <div data-options="region:'west',split:true" title="功能菜单" style="width:120px;">
+        <ul id="tt"></ul>
+    </div>
+    <div data-options="region:'center',title:'功能页面',iconCls:'icon-ok'" style="overflow: auto">
+        <iframe id="functionUrl" src="/image/welcome.jpg" height="100%" width="100%" scrolling="auto"></iframe>
+    </div>
+</div>
+</div>
+
+<script>
+    $('#tt').tree({
+        url:'/function/getCurrentEmployeeFunctions',
+        onClick: function(node){
+            $("#functionUrl").attr("src",node.url)
+        }
+    });
+
+    $(function (){
+        $.ajax({
+            url: "employee/userInfo",
+            type: "GET",
+            dataType:"json",
+            success:function (obj) {
+                $("#userName").html("<strong>"+obj.ename+"</strong>");
+            }
+        });
+    });
+</script>
+</body>
+</html>

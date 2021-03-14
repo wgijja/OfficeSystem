@@ -1,0 +1,5 @@
+com\offcn\dao\TEmployeeRoleMapper.class
+com\offcn\dao\TEmployeeMapper.class
+com\offcn\dao\TRoleMapper.class
+com\offcn\dao\TRoleFunctionMapper.class
+com\offcn\dao\TFunctionMapper.class

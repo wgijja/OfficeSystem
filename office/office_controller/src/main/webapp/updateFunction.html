@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>修改权限</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script>
+        $(document).ready(function (){
+           //发起ajax请求获取要修改的数据展示在页面
+            $.ajax({
+                type:"POST",
+                url:"/function/getFunctionFromSession",
+                success:function (data){
+                    $("#fid").val(data.fid);
+                    $("#fcode").textbox("setValue",data.fcode);
+                    $("#fname").textbox("setValue",data.fname);
+                    $("#furl").textbox("setValue",data.furl);
+                    if (data.parentid==0){
+                        $("#cc1").combobox("select","1");
+                    }else {
+                        $("#cc1").combobox("select","2");
+                        $('#firstFunction').removeAttr('style');
+                        $("#cc2").combobox("select",data.parentid);
+                    }
+                }
+            });
+        });
+
+        //函数
+        function submitForm() {
+            $('#form_function_update').form('submit', {
+                url: "/function/updateFunction",
+                success: function (data) {
+                    var obj = eval("(" + data + ")");
+                    alert(obj.message);
+                    if (obj.success) {
+                        window.location.href = "/function.html";
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        }
+
+        function clearForm() {
+            $('#form_function_update').form('clear');
+        }
+    </script>
+</head>
+<body>
+<div align="center">
+    <form id="form_function_update" method="post">
+        <input type="hidden" name="fid" id="fid">
+        <table cellpadding="5">
+            <tr>
+                <td>功能编码：</td>
+                <td><input id="fcode" class="easyui-textbox" type="text" name="fcode" data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能名称:</td>
+                <td><input id="fname" class="easyui-textbox" type="text" name="fname"
+                           data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能链接:</td>
+                <td><input id="furl" class="easyui-textbox" type="text" name="furl" data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能级别:</td>
+                <td>
+                    <input id="cc1" name="flevel" class="easyui-combobox" data-options="
+                    valueField: 'id',
+                    textField: 'text',
+                    data:[{
+                            id: '1',
+                            text: '一级功能'
+                            },{
+                                id: '2',
+                                text: '二级功能'
+                        }],
+                    onSelect: function(rec){
+                        if(rec.id==2){
+                            $('#firstFunction').removeAttr('style');
+                            var url = '/function/getFirstFunctions';
+                            $('#cc2').combobox('reload', url);
+                        }else{
+                            $('#firstFunction').attr('style','display: none');
+                        }
+                    }">
+                    <div id="firstFunction" style="display: none">
+                        <input id="cc2" class="easyui-combobox" name="parentid"
+                               data-options="valueField:'fid',textField:'fname',label:'一级功能:'">
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <div style="text-align:center;padding:5px 0">
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitForm()" style="width:80px">提交</a>
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()" style="width:80px">清空</a>
+    </div>
+</div>
+</body>
+</html>

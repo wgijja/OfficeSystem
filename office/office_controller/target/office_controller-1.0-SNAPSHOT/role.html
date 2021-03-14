@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>角色管理</title>
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script>
+        $(function () {
+            $("#dataGrid_role").datagrid({
+                url: '/role/getAllRoles',
+                title: "角色信息",
+                height: 400,
+                checkOnSelect: true,
+                pagination: true,
+                toolbar: "#dataGrid_toolbar",
+                fitColumns:true,
+                columns: [[
+                    {field: 'rid', checkbox: true, width: 60},
+                    {field: 'rcode', title: '角色编码', width: 80, align: 'center', sortable: true},
+                    {field: 'rname', title: '角色名称', width: 80, align: 'center', sortable: true},
+                    {
+                        field: 'operation',
+                        title: '操作',
+                        width: 165,
+                        align: 'center',
+                        formatter: function () {
+                            return '<a href="#" class="role_update_btn">修改</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="role_details_btn">详情</a>&nbsp;&nbsp;&nbsp;<a href="#" class="role_delete_btn">删除</a>';
+                        }
+                    }
+                ]],
+                onLoadSuccess: function () {
+                    //为每行按钮添加样式
+                    $(".role_update_btn").linkbutton({
+                        onClick:function (){
+                            $("#dialog_role_update").dialog({
+                                closed:false
+                            });
+                        }
+                    });
+                    $(".role_details_btn").linkbutton({
+                        onClick:function (){
+
+                        }
+                    });
+                    $(".role_delete_btn").linkbutton({
+                        onClick:function (){
+
+                        }
+                    });
+                }
+            });
+
+            //生效linkbutton
+            $("#dataGrid_toolbar a:contains(新增)").linkbutton({
+                iconCls:"icon-add",
+                onClick:function (){
+                    $("#dialog_role_add").dialog({
+                        closed: false,
+                        modal: true
+                    })
+                    //生成树
+                    $('#tt_add').tree({
+                        url:'/function/getCurrentEmployeeFunctions',
+                        checkbox: true
+                    });
+                }
+            });
+            $("#searchWord").textbox({
+                buttonIcon:"icon-search",
+                buttonText:"搜索",
+            });
+            $("#dataGrid_toolbar a:contains(批量删除)").linkbutton({
+                iconCls:"icon-cut",
+                onClick:function (){
+                    var param = $("#dataGrid_role").datagrid("getChecked");
+                    var rids = "";
+                    for (var i = 0; i < param.length; i++){
+                        var rid = param[i].rid;
+                        if (i==0){
+                            rids = rids + "rid=" + rid;
+                        }else {
+                            rids = rids + "&rid=" + rid;
+                        }
+                    }
+                    $.ajax({
+                        url: "/role/deleteByRids",
+                        type: "post",
+                        data: rids,
+                        dataType: "json",
+                        success: function (obj) {
+                            $.messager.show({
+                                title: "提示",
+                                msg: obj.msg
+                            });
+                            $("#dataGrid_role").datagrid("reload");
+                        }
+                    });
+                }
+            });
+            $("#dialog_role_add_buttons a:contains(保存)").linkbutton({
+                iconCls:"icon-ok",
+                onClick:function (){
+                    $("#form_role_add").form("submit");
+                }
+            });
+            $("#dialog_role_update_buttons a:contains(保存)").linkbutton({
+                onClick:function (){
+                    //写到修改了，但是之前的新增应该是有问题的，因为新增它也包含了新增功能的关系表
+                }
+            });
+            $("#dialog_role_update_buttons a:contains(取消)").linkbutton({
+                onClick:function (){
+                    $("#dialog_role_update").dialog({
+                        closed:true
+                    });
+                }
+            });
+
+            //生效dialog
+            $("#dialog_role_add").dialog({
+                width: 300,
+                iconCls: "icon-man",
+                title: "添加角色",
+                buttons: "#dialog_role_add_buttons",
+                closed: "true"
+            });
+            $("#dialog_role_update").dialog({
+                width: 300,
+                iconCls: "icon-man",
+                title: "修改角色",
+                buttons: "#dialog_role_update_buttons",
+                closed: "true"
+            });
+
+            //样式微调
+            $("#dialog_role_add_buttons").css("text-align", "center");
+
+            //监听新增的form表单
+            $("#form_role_add").form({
+                success: function (data) {
+                    var jsonData = eval("(" + data + ")");
+                    $.messager.show({
+                        title: "提示",
+                        msg: jsonData.msg
+                    });
+                    //关闭窗口
+                    $("#dialog_role_add").dialog({
+                        closed: true
+                    });
+                    //重新加载
+                    $("#dataGrid_role").datagrid("reload");
+                    //清空表单
+                    $("#form_role_add").form("clear");
+                }
+            });
+        });
+
+    </script>
+    <style>
+        #dialog_role_add{
+            border: 1px grey solid;
+        }
+    </style>
+</head>
+<body>
+    <!--按钮组-->
+    <div id="dataGrid_toolbar">
+        <a href="#">新增</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <a href="#">批量删除</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        角色名称：<input type="text" id="searchWord" name="rname">&nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+    <div id="dialog_role_add_buttons">
+        <a href="#">保存</a>
+    </div>
+    <div id="dialog_role_update_buttons">
+        <a href="#">保存</a>
+        <a href="#">取消</a>
+    </div>
+
+
+    <!--加载数据的dataGrid-->
+    <table id="dataGrid_role"></table>
+
+    <!--新增的dialog-->
+    <div id="dialog_role_add">
+        <form id="form_role_add" action="/role/addRole"  align="center">
+            <table>
+                <tr>
+                    <td >角色编码:</td>
+                    <td><input type="text" name="rcode" align="left"></td>
+                </tr>
+                <tr>
+                    <td >角色名称:</td>
+                    <td><input type="text" name="rname" align="left"></td>
+                </tr>
+                <tr>
+                    <td>角色功能:</td>
+                    <td><ul id="tt_add" align="left"></ul></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    <!--修改的dialog-->
+    <div id="dialog_role_update">
+        <form id="form_role_update" action="/role/updateRole"  align="center">
+            <table>
+                <tr>
+                    <td colspan="1"><input type="hidden" name="rid" align="left"></td>
+                </tr>
+                <tr>
+                    <td >角色编码:</td>
+                    <td><input type="text" name="rcode" align="left"></td>
+                </tr>
+                <tr>
+                    <td >角色名称:</td>
+                    <td><input type="text" name="rname" align="left"></td>
+                </tr>
+                <tr>
+                    <td>角色功能:</td>
+                    <td><ul id="tt_update" align="left"></ul></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</body>
+</html>

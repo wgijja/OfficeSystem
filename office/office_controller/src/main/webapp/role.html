@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>角色管理</title>
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script>
+        $(function () {
+            $("#dataGrid_role").datagrid({
+                url: '/role/getAllRoles',
+                title: "角色信息",
+                height: 300,
+                checkOnSelect: true,
+                pagination: true,
+                pageSize: 5,
+                pageList: [3, 5, 7],
+                toolbar: "#dataGrid_toolbar",
+                fitColumns: true,
+                columns: [[
+                    {field: 'rid', checkbox: true},
+                    {field: 'rcode', title: '角色编码', width: 80, align: 'center', sortable: true},
+                    {field: 'rname', title: '角色名称', width: 80, align: 'center', sortable: true},
+                    {
+                        field: 'operation',
+                        title: '操作',
+                        width: 165,
+                        align: 'center',
+                        formatter: function () {
+                            return '<a href="javascript:void(0);" class="role_update_btn">修改</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" class="role_details_btn">详情</a>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" class="role_delete_btn">删除</a>';
+                        }
+                    }
+                ]],
+                onLoadSuccess: function () {
+                    //为每行按钮添加样式
+                    $(".role_update_btn").linkbutton({
+                        onClick: function () {
+                            var rid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            $("#form_role_update").form("load", "/role/getRoleFunctionsByRid?rid=" + rid);
+                            $("#dialog_role_update").dialog({
+                                closed: false,
+                                modal: true
+                            });
+                        }
+                    });
+                    $(".role_details_btn").linkbutton({
+                        onClick: function () {
+                            var rid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            $("#form_role_detail").form("load", "/role/getRoleFunctionsByRid?rid=" + rid);
+                            $("#dialog_role_detail").dialog({
+                                closed: false,
+                                modal: true
+                            });
+                        }
+                    });
+                    $(".role_delete_btn").linkbutton({
+                        onClick: function () {
+                            var rid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            if (confirm("确定要删除此人吗")) {
+                                $.post("/role/deleteRoleByRid", {"rid": rid}, function (data) {
+                                        alert(data.message);
+                                        $("#dataGrid_role").datagrid("reload");
+                                    }, "json"
+                                );
+                            }
+                        }
+                    });
+                }
+            });
+
+            //生效linkbutton
+            $("#dataGrid_toolbar a:contains(新增)").linkbutton({
+                iconCls: "icon-add",
+                onClick: function () {
+                    $("#dialog_role_add").dialog({
+                        closed: false,
+                        modal: true
+                    })
+                }
+            });
+            $("#dialog_role_add_buttons a:contains(保存)").linkbutton({
+                iconCls: "icon-ok",
+                onClick: function () {
+                    $('#form_role_add').form('submit');
+                }
+            });
+            $("#searchWord").textbox({
+                buttonIcon: "icon-search",
+                buttonText: "搜索",
+                onClickButton: function () {
+                    var rname = $("#searchWord").val();
+                    $("#dataGrid_role").datagrid("load", {
+                        rname: rname
+                    })
+                }
+            });
+            $("#dataGrid_toolbar a:contains(批量删除)").linkbutton({
+                iconCls: "icon-cut",
+                onClick: function () {
+                    if (confirm("您确定要删除这些人吗？")){
+                        var param = $("#dataGrid_role").datagrid("getChecked");
+                        var rids = "";
+                        for (var i = 0; i < param.length; i++) {
+                            rids += param[i].rid + ",";
+                        }
+                        rids = rids.substring(0, rids.length - 1);
+                        $.ajax({
+                            url: "/role/deleteByRids",
+                            data: {"rids": rids},
+                            success: function (obj) {
+                                alert(obj.message);
+                                $("#dataGrid_role").datagrid("reload");
+                            }
+                        });
+                    }
+                }
+            });
+            $("#dialog_role_update_buttons a:contains(保存)").linkbutton({
+                onClick: function () {
+                    //获取选中和未决定状态的节点
+                    var nodes = $('#tt_update').tree('getChecked', ['checked', 'indeterminate']);
+                    //取出每个节点进行拼接
+                    var fids = "";
+                    for (var i = 0; i < nodes.length; i++) {
+                        fids += nodes[i].id + ",";
+                    }
+                    $("#form_role_update").form("submit", {
+                        url: "/role/updateRole",
+                        onSubmit: function (param) {
+                            param.fids = fids;
+                        },
+                        success: function (data) {
+                            var obj = eval("(" + data + ")");
+                            alert(obj.message);
+                            //关闭窗口
+                            $("#dialog_role_update").dialog({
+                                closed: true
+                            });
+                            //重新加载
+                            $("#dataGrid_role").datagrid("reload");
+                            //清空表单
+                            $("#form_role_update").form("clear");
+                        }
+                    });
+                }
+            });
+            $("#dialog_role_update_buttons a:contains(取消)").linkbutton({
+                onClick: function () {
+                    $("#dialog_role_update").dialog({
+                        closed: true
+                    });
+                }
+            });
+            $("#dialog_role_detail_buttons a:contains(了了)").linkbutton({
+                onClick: function () {
+                    $("#dialog_role_detail").dialog({
+                        closed: true
+                    });
+                }
+            });
+
+            //生效dialog
+            $("#dialog_role_add").dialog({
+                width: 600,
+                iconCls: "icon-man",
+                title: "添加角色",
+                buttons: "#dialog_role_add_buttons",
+                closed: "true"
+            });
+            $("#dialog_role_update").dialog({
+                width: 600,
+                iconCls: "icon-man",
+                title: "修改角色",
+                buttons: "#dialog_role_update_buttons",
+                closed: "true",
+                onOpen: function () {
+                    $("#tt_update").tree({
+                        url: "/role/getRoleFunctions",
+                        checkbox: true
+                    });
+                }
+            });
+            $("#dialog_role_detail").dialog({
+                width: 600,
+                iconCls: "icon-man",
+                title: "角色详情",
+                buttons: "#dialog_role_detail_buttons",
+                closed: "true",
+                onOpen: function () {
+                    $("#tt_detail").tree({
+                        url: "/role/getRoleFunctions",
+                        checkbox: true
+                    });
+                }
+            });
+
+            //监听新增的form表单
+            $("#form_role_add").form({
+                success: function (data) {
+                    var jsonData = eval("(" + data + ")");
+                    $.messager.show({
+                        title: "提示",
+                        msg: jsonData.message
+                    });
+                    //关闭窗口
+                    $("#dialog_role_add").dialog({
+                        closed: true
+                    });
+                    //重新加载
+                    $("#dataGrid_role").datagrid("reload");
+                    //清空表单
+                    $("#form_role_add").form("clear");
+                }
+            });
+
+            //样式微调
+            $("#dialog_role_add_buttons").css("text-align", "center");
+            $("#dialog_role_update_buttons").css("text-align", "center");
+            $("#dialog_role_detail_buttons").css("text-align", "center");
+        });
+
+    </script>
+
+</head>
+<body>
+<!--按钮组-->
+<div id="dataGrid_toolbar">
+    <a href="javascript:void(0);">新增</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="javascript:void(0);">批量删除</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    角色名称：<input type="text" id="searchWord" name="rname">&nbsp;&nbsp;&nbsp;&nbsp;
+</div>
+<div id="dialog_role_add_buttons">
+    <a href="javascript:void(0);">保存</a>
+</div>
+<div id="dialog_role_update_buttons">
+    <a href="javascript:void(0);">保存</a>
+    <a href="javascript:void(0);">取消</a>
+</div>
+<div id="dialog_role_detail_buttons">
+    <a href="javascript:void(0);">了了</a>
+</div>
+
+<!--加载数据的dataGrid-->
+<table id="dataGrid_role"></table>
+
+<!--新增的dialog-->
+<div id="dialog_role_add">
+    <form id="form_role_add" method="post" action="/role/addRole">
+        <table cellpadding="5">
+            <tr>
+                <td>角色编码：</td>
+                <td><input class="easyui-textbox" type="text" name="rcode" data-options="required:true"/></td>
+            </tr>
+            <tr>
+                <td>角色名称:</td>
+                <td><input class="easyui-textbox" type="text" name="rname"
+                           data-options="required:true"/></td>
+            </tr>
+            <tr>
+                <td>一级功能:</td>
+                <td>
+                    <input id="cc1" name="fids" class="easyui-combobox" data-options="
+                            valueField: 'fid',
+                            textField: 'fname',
+                            multiple:true,
+                            url:'/function/getFirstFunctions',
+                            onSelect: function(rec){
+                            var url = '/function/findFunctionsByParentId?parentid='+rec.fid;
+                            $('#cc2').combobox('reload', url);
+                        }"/>
+                    <input id="cc2" class="easyui-combobox" name="fids"
+                           data-options="valueField:'fid',textField:'fname',multiple:true,label:'二级功能:'"/>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<!--修改的dialog-->
+<div id="dialog_role_update">
+    <form id="form_role_update">
+        <table>
+            <tr>
+                <td colspan="1"><input type="hidden" name="rid"></td>
+            </tr>
+            <tr>
+                <td>角色编码:</td>
+                <td><input class="easyui-textbox" type="text" name="rcode" data-options="required:true"/></td>
+            </tr>
+            <tr>
+                <td>角色名称:</td>
+                <td><input class="easyui-textbox" type="text" name="rname" data-options="required:true"/></td>
+            </tr>
+            <tr>
+                <td>角色功能:</td>
+                <td>
+                    <ul id="tt_update"></ul>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<!--详情的dialog-->
+<div id="dialog_role_detail">
+    <form id="form_role_detail">
+        <table>
+            <tr>
+                <td colspan="1"><input type="hidden" name="rid"></td>
+            </tr>
+            <tr>
+                <td>角色编码:</td>
+                <td><input class="easyui-textbox" type="text" name="rcode" data-options="required:true" readonly/></td>
+            </tr>
+            <tr>
+                <td>角色名称:</td>
+                <td><input class="easyui-textbox" type="text" name="rname" data-options="required:true" readonly/></td>
+            </tr>
+            <tr>
+                <td>角色功能:</td>
+                <td>
+                    <ul id="tt_detail"></ul>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+com\offcn\common\BasePage.class
+com\offcn\common\BaseResult.class
+com\offcn\common\EmployeeResult.class
+com\offcn\common\EmployeeQuery.class
+com\offcn\common\RoleQuery.class

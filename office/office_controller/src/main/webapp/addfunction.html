@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>新增</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script>
+        function submitForm() {
+            $('#form_function_add').form('submit', {
+                url: "/function/addFunction",
+                success: function (data) {
+                    var obj = eval("(" + data + ")");
+                    alert(obj.message);
+                    if (obj.success) {
+                        window.location.href = "/function.html";
+                    } else {
+                        window.location.reload();
+                    }
+                }
+            });
+        }
+
+        function clearForm() {
+            $('#form_function_add').form('clear');
+        }
+    </script>
+</head>
+<body>
+<div align="center">
+    <form id="form_function_add" method="post">
+        <table cellpadding="5">
+            <tr>
+                <td>功能编码：</td>
+                <td><input class="easyui-textbox" type="text" name="fcode" data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能名称:</td>
+                <td><input class="easyui-textbox" type="text" name="fname"
+                           data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能链接:</td>
+                <td><input class="easyui-textbox" type="text" name="furl" data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能级别:</td>
+                <td>
+                    <input id="cc1" name="flevel" class="easyui-combobox" data-options="
+                    valueField: 'id',
+                    textField: 'text',
+                    data:[{
+                            id: '1',
+                            text: '一级功能'
+                            },{
+                                id: '2',
+                                text: '二级功能'
+                        }],
+                    onSelect: function(rec){
+                        if(rec.id==2){
+                            $('#firstFunction').removeAttr('style');
+                            var url = '/function/getFirstFunctions';
+                            $('#cc2').combobox('reload', url);
+                        }else{
+                            $('#firstFunction').attr('style','display: none');
+                        }
+                    }">
+                    <div id="firstFunction" style="display: none">
+                        <input id="cc2" class="easyui-combobox" name="parentid"
+                               data-options="valueField:'fid',textField:'fname',label:'一级功能:'">
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <div style="text-align:center;padding:5px 0">
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitForm()" style="width:80px">新增</a>
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()" style="width:80px">清空</a>
+    </div>
+</div>
+</body>
+</html>

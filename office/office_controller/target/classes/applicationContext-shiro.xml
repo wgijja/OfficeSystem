@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/aop
+                           http://www.springframework.org/schema/aop/spring-aop.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <!--指定未认证跳转页面-->
+        <property name="loginUrl" value="/index.html"/>
+        <!--指定未授权跳转页面-->
+        <property name="unauthorizedUrl" value="/index.html"/>
+        <property name="filterChainDefinitions">
+            <value>
+                <!--/admin/** = authc, roles[admin]   表示当前用户是否为某个角色-->
+                /test_1.html = authc,roles[1004]
+                <!--/docs/** = authc, perms[document:read]  表示当前用户是否有某个功能权限-->
+                /permsTest.html = authc,perms[003]
+                /css/** = anon
+                /image/** = anon
+                /js/** = anon
+                /index.html = anon
+                /employee/loginCheck = anon
+                /employee/logout = anon
+
+                /** = authc
+            </value>
+        </property>
+    </bean>
+
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="myRealm"/>
+    </bean>
+
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <bean id="myRealm" class="com.offcn.realm.EmployeeRealm">
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="MD5"/>
+                <property name="hashIterations" value="3"/>
+            </bean>
+        </property>
+    </bean>
+
+</beans>

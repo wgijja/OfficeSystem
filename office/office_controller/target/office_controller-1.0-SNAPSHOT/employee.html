@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>人员管理</title>
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script>
+        $(function () {
+            //显示数据
+            $("#dataGrid_employee").datagrid({
+                title: "员工信息",
+                height: 400,
+                toolbar: '#dataGrid_toolbar',
+                checkOnSelect: true,
+                pagination: true,
+                url: '/employee/selectAllEmployees',
+                columns: [[
+                    {field: 'eid', checkbox: true, width: 30},
+                    {field: 'ename', title: '姓名', width: 80, align: 'center', sortable: true},
+                    {
+                        field: 'esex',
+                        title: '性别',
+                        width: 60,
+                        align: 'center',
+                        formatter: function (value, row, index) {
+                            if (value == 0) {
+                                return '女';
+                            } else {
+                                return '男';
+                            }
+                        }
+                    },
+                    {field: 'eage', title: '年龄', width: 60, align: 'center', sortable: true},
+                    {field: 'etelephone', title: '联系电话', width: 130, align: 'center'},
+                    {
+                        field: 'hireDate',
+                        title: '入职日期',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        formatter: function (value, row, index) {
+                            return new Date(value).toLocaleDateString();
+                        }
+                    },
+                    {field: 'jobNumber', title: '工号', width: 100, align: 'center'},
+                    {
+                        field: 'operation',
+                        title: '操作',
+                        width: 165,
+                        align: 'center',
+                        formatter: function (value, row, index) {
+                            return '<a href="#" class="employee_update_btn">修改</a>        ' +
+                                '<a href="#" class="employee_details_btn">详情</a>        ' +
+                                '<a href="#" class="employee_delete_btn">删除</a>'
+                        }
+                    }
+                ]],
+                onLoadSuccess: function () {
+                    //为每行按钮添加样式
+                    $(".employee_update_btn").linkbutton({
+                        onClick: function () {
+                            $("#dialog_employee_update").dialog({
+                                closed: false,
+                                modal: true
+                            });
+                            //获取当前行eid
+                            var eid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            //加载数据
+                            $("#form_employee_update").form("load", "/employee/getEmployeeByEid?eid=" + eid);
+                            $.post("/employeeRole/getRolesByEid", {"eid": eid}, function (obj) {
+                                    $("#combobox_role_update").combobox("setValues", obj);
+                                }, "json"
+                            );
+                        }
+                    });
+                    $(".employee_details_btn").linkbutton({
+                        onClick: function () {
+                            $("#dialog_employee_details").dialog({
+                                closed: false,
+                                modal: true
+                            })
+                            //获取当前行eid
+                            var eid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            //加载数据
+                            $("#form_employee_details").form("load", "/employee/getEmployeeByEid?eid=" + eid);
+                            $.post("/employeeRole/getRolesByEid", {"eid": eid}, function (obj) {
+                                    $("#combobox_role_details").combobox("setValues", obj);
+                                }, "json"
+                            );
+                        }
+                    });
+                    $(".employee_delete_btn").linkbutton({
+                        onClick: function () {
+                            var eid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            if (confirm("确定要删除此人吗")) {
+                                $.post("/employee/deleteEmployeeByEid", {"eid": eid}, function (obj) {
+                                        $.messager.show({
+                                            title: "提示",
+                                            msg: obj.msg
+                                        });
+                                        $("#dataGrid_employee").datagrid("reload");
+                                    }, "json"
+                                );
+                                $.post("/employeeRole/deleteRolesByEid", {"eid": eid}, function (obj) {}, "json");
+                            }
+                        }
+                    });
+                }
+            });
+
+            //生效dialog
+            $("#dialog_employee_add").dialog({
+                width: 300,
+                iconCls: "icon-man",
+                title: "添加员工",
+                buttons: "#dialog_employee_add_buttons",
+                closed: "true"
+            });
+            $("#dialog_employee_update").dialog({
+                width: 300,
+                iconCls: "icon-man",
+                title: "修改员工",
+                closed: true,
+                buttons: "#dialog_employee_update_buttons"
+            });
+            $("#dialog_employee_details").dialog({
+                width: 300,
+                iconCls: "icon-man",
+                title: "详细信息",
+                closed: true,
+                buttons: "#dialog_employee_details_buttons"
+            })
+
+            //下拉选项框
+            $(".combobox_role").combobox({
+                multiple: true,
+                url: "/role/getAllRoles2",
+                valueField: "rid",
+                textField: "rname"
+            });
+
+            //监听新增的form表单
+            $("#form_employee_add").form({
+                success: function (data) {
+                    var jsonData = eval("(" + data + ")");
+                    $.messager.show({
+                        title: "提示",
+                        msg: jsonData.msg
+                    });
+                    //关闭窗口
+                    $("#dialog_employee_add").dialog({
+                        closed: true
+                    });
+                    //重新加载
+                    $("#dataGrid_employee").datagrid("reload");
+                    //清空表单
+                    $("#form_employee_add").form("clear");
+                }
+            });
+            //监听修改的form表单
+            $("#form_employee_update").form({
+                success: function (data) {
+                    var jsonData = eval("(" + data + ")");
+                    $.messager.show({
+                        title: "提示",
+                        msg: jsonData.msg
+                    });
+                    //关闭窗口
+                    $("#dialog_employee_update").dialog({
+                        closed: true
+                    })
+                    //重新加载
+                    $("#dataGrid_employee").datagrid("reload");
+                }
+            });
+
+            //生效linkButton
+            $("#dataGrid_toolbar a:contains(新增)").linkbutton({
+                iconCls: "icon-add",
+                onClick: function () {
+                    $("#dialog_employee_add").dialog({
+                        closed: false,
+                        modal: true
+                    })
+                }
+            });
+            $("#dataGrid_toolbar a:contains(删除选中)").linkbutton({
+                iconCls: "icon-cut"
+            });
+            $("#dialog_employee_add_buttons a:contains(保存)").linkbutton({
+                iconCls: "icon-ok",
+                onClick: function () {
+                    $("#form_employee_add").form("submit");
+                }
+            });
+            $("#dialog_employee_update_buttons a:contains(保存)").linkbutton({
+                iconCls: "icon-ok",
+                onClick: function () {
+                    $("#form_employee_update").form("submit");
+                }
+            });
+            $("#form_employee_search_button").linkbutton({
+                iconCls: "icon-search",
+                onClick: function () {
+                    var theEname = $("#search_ename").val();
+                    var theJobNumber = $("#search_jobNumber").val();
+                    $("#dataGrid_employee").datagrid("load", {
+                        ename: theEname,
+                        jobNumber: theJobNumber
+                    });
+                }
+            });
+            $("#dialog_employee_details_buttons a:contains(了了)").linkbutton({
+                iconCls: "icon-ok",
+                onClick: function () {
+                    $("#dialog_employee_details").dialog({
+                        closed: true
+                    });
+                }
+            });
+
+            //样式微调
+            $("#dialog_employee_add_buttons").css("text-align", "center");
+            $("#dialog_employee_update_buttons").css("text-align", "center");
+            $("#dialog_employee_details_buttons").css("text-align", "center");
+
+            //新增表单限制
+            $(".eage").numberbox({
+                min: 16
+            });
+        });
+        //批量删除
+        deleteEmployeeInBatches = function () {
+            var param = $("#dataGrid_employee").datagrid("getChecked");//获取被复选框选中的数据
+            var eids = "";
+            for (var i = 0; i < param.length; i++) {
+                var eid = param[i].eid;
+                if (i == 0) {
+                    eids = eids + "eid=" + eid;
+                } else {
+                    eids = eids + "&eid=" + eid;
+                }
+            }
+            $.ajax({
+                url: "/employee/deleteByEids",
+                type: "post",
+                data: eids,
+                dataType: "json",
+                success: function (obj) {
+                    $.messager.show({
+                        title: "提示",
+                        msg: obj.msg
+                    });
+                    $("#dataGrid_employee").datagrid("reload");
+                }
+            });
+        }
+
+    </script>
+    <style>
+        #dialog_employee_add td {
+            border: 1px gray;
+            margin: 1px;
+        }
+
+        #dialog_employee_update td {
+            border: 1px gray;
+            margin: 1px;
+        }
+    </style>
+
+</head>
+<body>
+<!--按钮组-->
+<div id="dataGrid_toolbar">
+    <form id="form_employee_search" action="/employee/selectAllEmployees" method="get">
+        <a href="#">新增</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        员工姓名：<input type="text" name="ename" id="search_ename">&nbsp;&nbsp;
+        员工工号：<input type="text" name="jobNumber" id="search_jobNumber">&nbsp;&nbsp;
+        <a href="#" id="form_employee_search_button">搜索</a>
+    </form>
+    <a href="#" onClick="deleteEmployeeInBatches()">删除选中</a>
+</div>
+<div id="dialog_employee_add_buttons">
+    <a href="#">保存</a>
+</div>
+<div id="dialog_employee_update_buttons">
+    <a href="#">保存</a>
+</div>
+<div id="dialog_employee_details_buttons">
+    <a href="#">了了</a>
+</div>
+
+
+<!--数据表-->
+<table id="dataGrid_employee"></table>
+
+<!--新增的表单-->
+<div id="dialog_employee_add" align="center">
+    <form id="form_employee_add" action="/employee/addEmployee" method="post">
+        <table>
+            <tr>
+                <td>姓名:</td>
+                <td><input type="text" name="ename"></td>
+            </tr>
+            <tr>
+                <td>性别:</td>
+                <td>男:<input type="radio" name="esex" value="1">&nbsp;女:<input type="radio" name="esex" value="0"></td>
+            </tr>
+            <tr>
+                <td>年龄:</td>
+                <td><input type="text" name="eage" class="eage"></td>
+            </tr>
+            <tr>
+                <td>联系电话:</td>
+                <td><input type="text" name="etelephone"></td>
+            </tr>
+            <tr>
+                <td>入职日期:</td>
+                <td><input type="date" name="hireDate"></td>
+            </tr>
+            <tr>
+                <td>工号:</td>
+                <td><input type="text" name="jobNumber"></td>
+            </tr>
+            <tr>
+                <td>密码:</td>
+                <td><input type="text" name="password"></td>
+            </tr>
+            <tr>
+                <td>员工角色:</td>
+                <td><select class="combobox_role" id="combobox_role_add" name="rid"></select></td>
+            </tr>
+            <tr>
+                <td>备注一:</td>
+                <td><input type="text" name="remark1"></td>
+            </tr>
+            <tr>
+                <td>备注二:</td>
+                <td><input type="text" name="remark2"></td>
+            </tr>
+            <tr>
+                <td>备注三:</td>
+                <td><input type="text" name="remark3"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<!--修改的表单-->
+<div id="dialog_employee_update" align="center">
+    <form id="form_employee_update" action="/employee/updateEmployeeByEid" method="post">
+        <table>
+            <tr>
+                <td colspan="1"><input type="hidden" name="eid"></td>
+            </tr>
+            <tr>
+                <td>姓名:</td>
+                <td><input type="text" name="ename"></td>
+            </tr>
+            <tr>
+                <td>性别:</td>
+                <td>男:<input type="radio" name="esex" value="1">&nbsp;女:<input type="radio" name="esex" value="0"></td>
+            </tr>
+            <tr>
+                <td>年龄:</td>
+                <td><input type="text" name="eage" class="eage"></td>
+            </tr>
+            <tr>
+                <td>联系电话:</td>
+                <td><input type="text" name="etelephone"></td>
+            </tr>
+            <tr>
+                <td>入职日期:</td>
+                <td><input type="date" name="hireDate"></td>
+            </tr>
+            <tr>
+                <td>工号:</td>
+                <td><input type="text" name="jobNumber"></td>
+            </tr>
+            <tr>
+                <td>密码:</td>
+                <td><input type="text" name="password"></td>
+            </tr>
+            <tr>
+                <td>员工角色:</td>
+                <td><select class="combobox_role" id="combobox_role_update" name="rid"></select></td>
+            </tr>
+            <tr>
+                <td>备注一:</td>
+                <td><input type="text" name="remark1"></td>
+            </tr>
+            <tr>
+                <td>备注二:</td>
+                <td><input type="text" name="remark2"></td>
+            </tr>
+            <tr>
+                <td>备注三:</td>
+                <td><input type="text" name="remark3"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+<!--详情的表单-->
+<div id="dialog_employee_details" align="center">
+    <form id="form_employee_details" action="/employee/getEmployeeByEid" method="post">
+        <table>
+            <tr>
+                <td colspan="1"><input type="hidden" name="eid"></td>
+            </tr>
+            <tr>
+                <td>姓名:</td>
+                <td><input type="text" name="ename"></td>
+            </tr>
+            <tr>
+                <td>性别:</td>
+                <td>男:<input type="radio" name="esex" value="1">&nbsp;女:<input type="radio" name="esex" value="0"></td>
+            </tr>
+            <tr>
+                <td>年龄:</td>
+                <td><input type="text" name="eage" class="eage"></td>
+            </tr>
+            <tr>
+                <td>联系电话:</td>
+                <td><input type="text" name="etelephone"></td>
+            </tr>
+            <tr>
+                <td>入职日期:</td>
+                <td><input type="date" name="hireDate"></td>
+            </tr>
+            <tr>
+                <td>工号:</td>
+                <td><input type="text" name="jobNumber"></td>
+            </tr>
+            <tr>
+                <td>密码:</td>
+                <td><input type="text" name="password"></td>
+            </tr>
+            <tr>
+                <td>员工角色:</td>
+                <td><select class="combobox_role" id="combobox_role_details" name="rid"></select></td>
+            </tr>
+            <tr>
+                <td>备注一:</td>
+                <td><input type="text" name="remark1"></td>
+            </tr>
+            <tr>
+                <td>备注二:</td>
+                <td><input type="text" name="remark2"></td>
+            </tr>
+            <tr>
+                <td>备注三:</td>
+                <td><input type="text" name="remark3"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

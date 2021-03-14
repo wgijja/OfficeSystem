@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>功能管理</title>
+    <link rel="stylesheet" type="text/css" href="/css/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="/css/demo/demo.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.easyui.min.js"></script>
+    <script>
+        $(function () {
+            $("#dataGrid_function").datagrid({
+                url: "/function/getFunctionList",
+                columns: [[
+                    {field: 'fid', checkbox: true},
+                    {field: 'fcode', title: '功能编码', width: 100, align: 'center', sortable: true},
+                    {field: 'fname', title: '功能名称', width: 100, align: 'center', sortable: true},
+                    {field: 'furl', title: '功能链接', width: 250, align: 'center'},
+                    {field: 'remark2', title: '父级功能', width: 100, align: 'center'},
+                    {
+                        field: 'operation',
+                        title: '操作',
+                        width: 165,
+                        align: 'center',
+                        formatter: function (value, row, index) {
+                            return '<a href="javascript:void(0);" class="function_update_btn" onclick="updateFunction('+row.fid+')">修改</a>        ' +
+                                '<a href="javascript:void(0);" class="function_details_btn" onclick="detailFunction('+row.fid+')">详情</a>        ' +
+                                '<a href="javascript:void(0);" class="function_delete_btn" ">删除</a>'
+                        }
+                    }
+                ]],
+                pagination: true,
+                pageNumber: 1,
+                pageSize: 5,
+                pageList: [3, 5, 7],
+                toolbar: "#dataGrid_toolbar",
+                onLoadSuccess:function (){
+                    //为每行按钮添加样式
+                    $(".function_update_btn").linkbutton();
+                    $(".function_details_btn").linkbutton();
+                    $(".function_delete_btn").linkbutton({
+                        onClick: function () {
+                            var fid = $(this).parent().parent().parent().children().eq(0).find("input").val();
+                            if (confirm("确定要删除此功能吗")) {
+                                $.ajax({
+                                    data:{"fid":fid},
+                                    url:"/function/deleteFunctionAndRoleFunctionByFid",
+                                    success:function (obj){
+                                        alert(obj.message);
+                                        if (obj.success) {
+                                            window.location.href = "/function.html";
+                                        } else {
+                                            window.location.reload();
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            //生效dialog
+            $("#dialog_function_details").dialog({
+                width: 300,
+                iconCls: "icon-man",
+                title: "详细信息",
+                closed: true,
+                buttons: "#dialog_function_details_buttons"
+            });
+
+            //生效linkbutton
+            $("#dialog_function_details_buttons a:contains(修改)").linkbutton({
+                onClick:function (){
+                    $('#form_function_details').form('submit', {
+                        url: "/function/updateFunction",
+                        success: function (data) {
+                            var obj = eval("(" + data + ")");
+                            alert(obj.message);
+                            if (obj.success) {
+                                window.location.href = "/function.html";
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+                    });
+                }
+            });
+            $("#dialog_function_details_buttons a:contains(了了)").linkbutton({
+                onClick:function (){
+                    $("#dialog_function_details").dialog({closed: true});
+                }
+            });
+            $("#dataGrid_toolbar a:contains(批量删除)").linkbutton({
+                iconCls:'icon-cut',
+                plain:true,
+                onClick:function (){
+                    if (confirm("您确定要删除吗？")){
+                        var rows = $("#dataGrid_function").datagrid("getChecked");
+                        var fids = "";
+                        for (var i = 0; i < rows.length; i++){
+                            fids+=rows[i].fid+",";
+                        }
+                        $.ajax({
+                            url:"/function/batchDelete?fids="+fids,
+                            success:function (data){
+                                alert(data.message);
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            });
+
+            //样式微调
+            $("#dialog_function_details_buttons").css("text-align", "center");
+        });
+
+        //函数
+        searchFunctionList = function () {
+            $("#dataGrid_function").datagrid("load", {
+                fname: $("#fname").val()
+            })
+        }
+
+        updateFunction = function (fid){
+            $.ajax({
+                url:"/function/getFunctionByFidToSession?fid="+fid,
+                success:function (data){
+                    if (data.success){
+                        window.location.href = "/updateFunction.html"
+                    }
+                }
+            });
+        }
+
+        detailFunction = function (fid){
+            $("#dialog_function_details").dialog({closed: false,modal: true});
+            //加载数据
+            $("#form_function_details").form("load", "/function/getFunctionByFid?fid="+fid);
+            $.ajax({
+                type:"POST",
+                url:"/function/getFunctionFromSession",
+                success:function (data){
+                    $("#fid").val(data.fid);
+                    $("#fcode").textbox("setValue",data.fcode);
+                    $("#fname1").textbox("setValue",data.fname);
+                    $("#furl").textbox("setValue",data.furl);
+                    if (data.parentid==0){
+                        $("#cc1").combobox("select","1");
+                    }else {
+                        $("#cc1").combobox("select","2");
+                        $('#firstFunction').removeAttr('style');
+                        $("#cc2").combobox("select",data.parentid);
+                    }
+                }
+            });
+        }
+    </script>
+
+</head>
+<body>
+<!--按钮组-->
+<div id="dataGrid_toolbar">
+    <a href="/addfunction.html" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">新增</a>
+    功能名称：<input type="test" id="fname">
+    <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true"
+       onclick="searchFunctionList()">搜索</a>
+    <a href="javascript:void(0);">批量删除</a>
+</div>
+<div id="dialog_function_details_buttons">
+    <a href="javascript:void(0);">修改</a>
+    <a href="javascript:void(0);">了了</a>
+</div>
+
+<!--加载数据-->
+<table id="dataGrid_function"></table>
+
+<!--详情的dialog-->
+<div id="dialog_function_details" align="center">
+    <form id="form_function_details" method="post">
+        <input type="hidden" name="fid" id="fid">
+        <table cellpadding="5">
+            <tr>
+                <td>功能编码：</td>
+                <td><input id="fcode" class="easyui-textbox" type="text" name="fcode" data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能名称:</td>
+                <td><input id="fname1" class="easyui-textbox" type="text" name="fname"
+                           data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能链接:</td>
+                <td><input id="furl" class="easyui-textbox" type="text" name="furl" data-options="required:true"></input></td>
+            </tr>
+            <tr>
+                <td>功能级别:</td>
+                <td>
+                    <input id="cc1" name="flevel" class="easyui-combobox" data-options="
+                    valueField: 'id',
+                    textField: 'text',
+                    data:[{
+                            id: '1',
+                            text: '一级功能'
+                            },{
+                                id: '2',
+                                text: '二级功能'
+                        }],
+                    onSelect: function(rec){
+                        if(rec.id==2){
+                            $('#firstFunction').removeAttr('style');
+                            var url = '/function/getFirstFunctions';
+                            $('#cc2').combobox('reload', url);
+                        }else{
+                            $('#firstFunction').attr('style','display: none');
+                        }
+                    }">
+                    <div id="firstFunction" style="display: none">
+                        <input id="cc2" class="easyui-combobox" name="parentid"
+                               data-options="valueField:'fid',textField:'fname',label:'一级功能:'">
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>
