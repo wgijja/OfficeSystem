@@ -1,0 +1,4 @@
+com\offcn\seckill\controller\AliPayController.class
+com\offcn\seckill\controller\SeckillOrderController.class
+com\offcn\seckill\service\UserDetailsServiceImpl.class
+com\offcn\seckill\controller\SeckillGoodsController.class

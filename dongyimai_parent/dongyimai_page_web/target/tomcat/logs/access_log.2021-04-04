@@ -1,0 +1,7 @@
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:06 +0800] "GET /149187842867993.html HTTP/1.1" 200 48362 http-bio-9105-exec-1 67
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:07 +0800] "GET /js/base.js HTTP/1.1" 304 - http-bio-9105-exec-4 434
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:07 +0800] "GET /js/controller/itemPageController.js HTTP/1.1" 304 - http-bio-9105-exec-5 512
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:08 +0800] "GET /index/index.js HTTP/1.1" 404 979 http-bio-9105-exec-7 3
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:08 +0800] "GET /img/xg/erweima.png HTTP/1.1" 404 987 http-bio-9105-exec-8 395
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:10 +0800] "GET /index/index.js HTTP/1.1" 404 979 http-bio-9105-exec-9 1
+0:0:0:0:0:0:0:1 - - [04/Apr/2021:20:48:12 +0800] "GET /assets/img/favicon.ico HTTP/1.1" 404 995 http-bio-9105-exec-1 1

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--1、创建真正的连接工厂，由供应商提供-->
+    <bean class="org.apache.activemq.ActiveMQConnectionFactory" id="targetConnectionFactory">
+        <property name="brokerURL" value="tcp://192.168.188.128:61616"/>
+    </bean>
+    <!--2、创建spring管理连接的连接工厂-->
+    <bean class="org.springframework.jms.connection.SingleConnectionFactory" id="singleConnectionFactory">
+        <property name="targetConnectionFactory" ref="targetConnectionFactory"/>
+    </bean>
+    <!--3、创建模板对象-->
+    <bean class="org.springframework.jms.core.JmsTemplate" id="jmsTemplate">
+        <property name="connectionFactory" ref="singleConnectionFactory"/>
+    </bean>
+    <!--4、创建一个点对点的消息队列-->
+    <bean class="org.apache.activemq.command.ActiveMQQueue" id="queueSolrDestination">
+        <constructor-arg value="dongyimai_solr_queue"/>
+    </bean>
+
+    <!--创建一个删除solr的点对点消息队列-->
+    <bean class="org.apache.activemq.command.ActiveMQQueue" id="queueDeleteSolrDestination">
+        <constructor-arg value="dongyimai_solr_delete_queue"/>
+    </bean>
+
+    <!--创建一个生成静态网页的发布订阅模式消息队列-->
+    <bean class="org.apache.activemq.command.ActiveMQTopic" id="topicPageDestination">
+        <constructor-arg value="dongyimai_page_topic"/>
+    </bean>
+
+    <!--创建一个删除静态网页的发布订阅模式消息队列-->
+    <bean class="org.apache.activemq.command.ActiveMQTopic" id="topicDeletePageDestination">
+        <constructor-arg value="dongyimai_page_delete_topic"/>
+    </bean>
+</beans>
